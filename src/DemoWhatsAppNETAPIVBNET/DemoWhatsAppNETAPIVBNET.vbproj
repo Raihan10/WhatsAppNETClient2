@@ -22,6 +22,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DocumentationFile>DemoWhatsAppNETAPIVBNET.xml</DocumentationFile>
     <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -37,13 +38,13 @@
     <OptionExplicit>On</OptionExplicit>
   </PropertyGroup>
   <PropertyGroup>
-    <OptionCompare>Binary</OptionCompare>
+    <OptionCompare>Text</OptionCompare>
   </PropertyGroup>
   <PropertyGroup>
     <OptionStrict>Off</OptionStrict>
   </PropertyGroup>
   <PropertyGroup>
-    <OptionInfer>On</OptionInfer>
+    <OptionInfer>Off</OptionInfer>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.AspNet.SignalR.Client, Version=2.4.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -142,6 +143,12 @@
     <Compile Include="FrmContactOrGroup.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="FrmDatabaseKontak.Designer.vb">
+      <DependentUpon>FrmDatabaseKontak.vb</DependentUpon>
+    </Compile>
+    <Compile Include="FrmDatabaseKontak.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="FrmMain.Designer.vb">
       <DependentUpon>FrmMain.vb</DependentUpon>
     </Compile>
@@ -173,6 +180,9 @@
   <ItemGroup>
     <EmbeddedResource Include="FrmContactOrGroup.resx">
       <DependentUpon>FrmContactOrGroup.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FrmDatabaseKontak.resx">
+      <DependentUpon>FrmDatabaseKontak.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FrmMain.resx">
       <DependentUpon>FrmMain.vb</DependentUpon>

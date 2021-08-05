@@ -144,6 +144,7 @@ Public Class FrmMain
         If (jumlahPesan > 1) Then ' broadcast
 
             Dim list As New List(Of MsgArgs)
+            Dim index As Integer
 
             For index = 1 To jumlahPesan
 
@@ -334,6 +335,7 @@ Public Class FrmMain
             btnArchiveChat.Invoke(Sub() btnArchiveChat.Enabled = True)
             btnDeleteChat.Invoke(Sub() btnDeleteChat.Enabled = True)
             btnKirim.Invoke(Sub() btnKirim.Enabled = True)
+            btnDatabase.Invoke(Sub() btnDatabase.Enabled = True)
             chkSubscribe.Invoke(Sub() chkSubscribe.Enabled = True)
             chkMessageSentSubscribe.Invoke(Sub() chkMessageSentSubscribe.Enabled = True)
 
@@ -511,6 +513,12 @@ Public Class FrmMain
             frm.ShowDialog()
             RemoveHandler _wa.OnReceiveGroups, AddressOf frm.OnReceiveGroupsHandler ' unsubscribe event
 
+        End Using
+    End Sub
+
+    Private Sub btnDatabase_Click(sender As Object, e As EventArgs) Handles btnDatabase.Click
+        Using frm As New FrmDatabaseKontak("Kontak")
+            frm.ShowDialog()
         End Using
     End Sub
 
