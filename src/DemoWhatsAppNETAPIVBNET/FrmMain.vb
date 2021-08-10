@@ -518,7 +518,13 @@ Public Class FrmMain
 
     Private Sub btnDatabase_Click(sender As Object, e As EventArgs) Handles btnDatabase.Click
         Using frm As New FrmDatabaseKontak("Kontak")
+
+            AddHandler _wa.OnReceiveContacts, AddressOf frm.AddKontakToDB ' subscribe event
+            _wa.GetContacts()
+
             frm.ShowDialog()
+            RemoveHandler _wa.OnReceiveContacts, AddressOf frm.AddKontakToDB ' unsubscribe event
+
         End Using
     End Sub
 

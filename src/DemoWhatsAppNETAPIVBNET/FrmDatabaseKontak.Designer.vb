@@ -33,14 +33,14 @@ Partial Class FrmDatabaseKontak
         Me.DataGridView1.Name = "DataGridView1"
         Me.DataGridView1.RowHeadersWidth = 62
         Me.DataGridView1.RowTemplate.Height = 28
-        Me.DataGridView1.Size = New System.Drawing.Size(765, 410)
+        Me.DataGridView1.Size = New System.Drawing.Size(1792, 813)
         Me.DataGridView1.TabIndex = 0
         '
         'FrmDatabaseKontak
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(9.0!, 20.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(800, 450)
+        Me.ClientSize = New System.Drawing.Size(1809, 853)
         Me.Controls.Add(Me.DataGridView1)
         Me.Name = "FrmDatabaseKontak"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
