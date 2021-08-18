@@ -32,6 +32,7 @@ Public Class FrmMain
     End Sub
 
     Private Sub btnStart_Click(sender As Object, e As EventArgs) Handles btnStart.Click
+        'txtLokasiWhatsAppNETAPINodeJs.Text = "D:\Documents\Kuliah\PKL\Percobaan\wanetlibraryfork\WhatsAppNETAPINodeJs"
         If (String.IsNullOrEmpty(txtLokasiWhatsAppNETAPINodeJs.Text)) Then
             MessageBox.Show("Maaf, lokasi folder 'WhatsApp NET API NodeJs'  belum di set", "Peringatan",
                 MessageBoxButtons.OK, MessageBoxIcon.Information)
@@ -106,6 +107,7 @@ Public Class FrmMain
         btnArchiveChat.Enabled = False
         btnDeleteChat.Enabled = False
         btnKirim.Enabled = False
+        btnDatabase.Enabled = False
 
         txtFileDokumen.Clear()
         txtFileGambar.Clear()
@@ -518,7 +520,7 @@ Public Class FrmMain
 
     Private Sub btnDatabase_Click(sender As Object, e As EventArgs) Handles btnDatabase.Click
         Using frm As New FrmDatabaseKontak("Kontak")
-
+            frm.Koneksi()
             AddHandler _wa.OnReceiveContacts, AddressOf frm.AddKontakToDB ' subscribe event
             _wa.GetContacts()
 
