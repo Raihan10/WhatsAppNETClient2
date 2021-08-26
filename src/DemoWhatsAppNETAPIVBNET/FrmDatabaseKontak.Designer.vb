@@ -23,6 +23,8 @@ Partial Class FrmDatabaseKontak
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
         Me.DataGridView1 = New System.Windows.Forms.DataGridView()
+        Me.btnSynchronize = New System.Windows.Forms.Button()
+        Me.btnSend = New System.Windows.Forms.Button()
         CType(Me.DataGridView1, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -36,11 +38,31 @@ Partial Class FrmDatabaseKontak
         Me.DataGridView1.Size = New System.Drawing.Size(1785, 796)
         Me.DataGridView1.TabIndex = 0
         '
+        'btnSynchronize
+        '
+        Me.btnSynchronize.Location = New System.Drawing.Point(1107, 893)
+        Me.btnSynchronize.Name = "btnSynchronize"
+        Me.btnSynchronize.Size = New System.Drawing.Size(240, 93)
+        Me.btnSynchronize.TabIndex = 1
+        Me.btnSynchronize.Text = "Synchronize"
+        Me.btnSynchronize.UseVisualStyleBackColor = True
+        '
+        'btnSend
+        '
+        Me.btnSend.Location = New System.Drawing.Point(1488, 893)
+        Me.btnSend.Name = "btnSend"
+        Me.btnSend.Size = New System.Drawing.Size(240, 93)
+        Me.btnSend.TabIndex = 2
+        Me.btnSend.Text = "Send"
+        Me.btnSend.UseVisualStyleBackColor = True
+        '
         'FrmDatabaseKontak
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(9.0!, 20.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(1809, 853)
+        Me.ClientSize = New System.Drawing.Size(1809, 1015)
+        Me.Controls.Add(Me.btnSend)
+        Me.Controls.Add(Me.btnSynchronize)
         Me.Controls.Add(Me.DataGridView1)
         Me.Name = "FrmDatabaseKontak"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
@@ -51,4 +73,6 @@ Partial Class FrmDatabaseKontak
     End Sub
 
     Friend WithEvents DataGridView1 As DataGridView
+    Friend WithEvents btnSynchronize As Button
+    Friend WithEvents btnSend As Button
 End Class

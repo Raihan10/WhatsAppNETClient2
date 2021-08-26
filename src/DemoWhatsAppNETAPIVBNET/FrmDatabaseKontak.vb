@@ -1,10 +1,12 @@
 ﻿Imports System.Data.OleDb
 Imports WhatsAppNETAPI
 Public Class FrmDatabaseKontak
-    Dim Conn As OleDbConnection
+    Public Conn As OleDbConnection
     Dim da As OleDbDataAdapter
     Dim ds As DataSet
     Dim LokasiDB As String
+
+    Private iWhatsApp As IWhatsAppNETAPI
     Public Sub New(ByVal title As String)
 
         ' This call is required by the designer.
@@ -12,6 +14,9 @@ Public Class FrmDatabaseKontak
 
         ' Add any initialization after the InitializeComponent() call.
         Me.Text = title
+
+        ' Cretae object
+        iWhatsApp = New WhatsAppNETAPI.WhatsAppNETAPI()
     End Sub
     Sub Koneksi()
         LokasiDB = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=kontakDB.accdb"
@@ -24,7 +29,7 @@ Public Class FrmDatabaseKontak
         Dim dtCustomerCategory As New DataTable
         DataGridView1.ColumnCount = 3
         DataGridView1.Columns(0).Name = "Customer ID"
-        DataGridView1.Columns(0).Visible = False
+        'DataGridView1.Columns(0).Visible = False
         DataGridView1.Columns(1).Name = "Nama"
         DataGridView1.Columns(2).Name = "Handphone"
 
@@ -70,8 +75,8 @@ Public Class FrmDatabaseKontak
         Dim countCustomerRows = dsAllCustomer.Tables("customer").Rows.Count - 1
         For i = 0 To countCustomerRows
             Dim customer_id As String = dsAllCustomer.Tables("customer").Rows(i).Item(0).ToString
-            Dim customer_name As String = dsAllCustomer.Tables("customer").Rows(i).Item(1).ToString
-            Dim handphone As String = dsAllCustomer.Tables("customer").Rows(i).Item(2).ToString
+            Dim handphone As String = dsAllCustomer.Tables("customer").Rows(i).Item(1).ToString
+            Dim customer_name As String = dsAllCustomer.Tables("customer").Rows(i).Item(2).ToString
             Dim rowCustomer As String() = New String() {customer_id, customer_name, handphone}
             Dim rowIndex As Integer = DataGridView1.Rows.Add(rowCustomer)
 
@@ -133,6 +138,7 @@ Public Class FrmDatabaseKontak
     End Sub
     Private Sub FrmDatabaseKontak_FormClosing(sender As Object, e As EventArgs) Handles MyBase.FormClosing
         'DeleteAllData()
+        'Conn.Close()
     End Sub
     Sub AddKontakToDB(contacts As IList(Of Contact))
         'Koneksi()
@@ -151,6 +157,26 @@ Public Class FrmDatabaseKontak
                     Dim cmd As OleDbCommand = New OleDbCommand(queryString, Conn)
                     cmd.Parameters.Add(New OleDbParameter("customer_name", contact.name))
                     cmd.Parameters.Add(New OleDbParameter("handphone", contact.id))
+
+                    Try
+                        cmd.ExecuteNonQuery()
+                        cmd.Dispose()
+                    Catch ex As Exception
+                        MsgBox(ex.Message)
+                    End Try
+                Else
+                    'If (contact.id.Equals("6287747965139")) Then
+                    '    MessageBox.Show(dsSelectOne.Tables("customer").Rows.Count)
+                    '    MessageBox.Show(contact.id)
+                    '    MessageBox.Show(contact.name)
+                    'End If
+
+                    'MessageBox.Show(dsSelectOne.Tables("customer").Rows.Count)
+                    'MessageBox.Show(contact.id)
+                    'MessageBox.Show(contact.name)
+                    Dim queryUpdateString As String
+                    queryUpdateString = "UPDATE customer SET [customer_name] = '" & contact.name & "' WHERE [handphone] = '" & contact.id & "'"
+                    Dim cmd As OleDbCommand = New OleDbCommand(queryUpdateString, Conn)
 
                     Try
                         cmd.ExecuteNonQuery()
@@ -197,5 +223,25 @@ Public Class FrmDatabaseKontak
             End Try
         End If
         'Conn.Close()
+    End Sub
+    Public Event SynchronizeEvent()
+    Public Event BroadcastEvent()
+    Private Sub btnSynchronize_Click(sender As Object, e As EventArgs) Handles btnSynchronize.Click
+        'Close()
+        'MessageBox.Show("Silahkan klik tombol 'Data' kembali")
+        'Conn.Close()
+        RaiseEvent SynchronizeEvent()
+    End Sub
+
+    Private Sub btnSend_Click(sender As Object, e As EventArgs) Handles btnSend.Click
+        RaiseEvent BroadcastEvent()
+    End Sub
+    Public Sub getAllRelations()
+        Dim daSelectAllRelations As OleDbDataAdapter
+        daSelectAllRelations = New OleDbDataAdapter("SELECT * FROM customer_category", Conn)
+        Dim dsAllRelations As DataSet
+        dsAllRelations = New DataSet
+        dsAllRelations.Clear()
+        daSelectAllRelations.Fill(dsAllRelations, "category")
     End Sub
 End Class
