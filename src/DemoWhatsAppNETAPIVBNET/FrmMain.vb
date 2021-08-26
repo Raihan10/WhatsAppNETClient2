@@ -36,7 +36,7 @@ Public Class FrmMain
     End Sub
 
     Private Sub btnStart_Click(sender As Object, e As EventArgs) Handles btnStart.Click
-        txtLokasiWhatsAppNETAPINodeJs.Text = "D:\Documents\Kuliah\PKL\Percobaan\wanetlibraryfork\WhatsAppNETAPINodeJs"
+        'txtLokasiWhatsAppNETAPINodeJs.Text = "D:\Documents\Kuliah\PKL\Percobaan\wanetlibraryfork\WhatsAppNETAPINodeJs"
         If (String.IsNullOrEmpty(txtLokasiWhatsAppNETAPINodeJs.Text)) Then
             MessageBox.Show("Maaf, lokasi folder 'WhatsApp NET API NodeJs'  belum di set", "Peringatan",
                 MessageBoxButtons.OK, MessageBoxIcon.Information)
@@ -522,87 +522,72 @@ Public Class FrmMain
         End Using
     End Sub
     Public Sub synchronizeDatabase() Handles frmDbKontakClass.SynchronizeEvent
-        'Using frmDatabaseKontak As New FrmDatabaseKontak("Kontak")
-        '    frmDatabaseKontak.Koneksi()
-        '    AddHandler _wa.OnReceiveContacts, AddressOf frmDatabaseKontak.AddKontakToDB ' subscribe event
-        '    _wa.GetContacts()
-
-        '    frmDatabaseKontak.ShowDialog()
-        ''    RemoveHandler _wa.OnReceiveContacts, AddressOf frmDatabaseKontak.AddKontakToDB ' unsubscribe event
-        'End Using
-        'MessageBox.Show("Test")
-        'frmDbKontakClass.ShowDialog()
         frmDbKontakClass.DataGridView1.Rows.Clear()
         frmDbKontakClass.DataGridView1.Columns.Clear()
         AddHandler _wa.OnReceiveContacts, AddressOf frmDbKontakClass.AddKontakToDB ' subscribe event
         _wa.GetContacts()
 
-        'frmDbKontakClass.ShowDialog()
         frmDbKontakClass.LoadDataKontak()
         RemoveHandler _wa.OnReceiveContacts, AddressOf frmDbKontakClass.AddKontakToDB ' unsubscribe event
-        'frmDbKontakClass.LoadDataKontak()
     End Sub
     Public Sub broadcastMessage() Handles frmDbKontakClass.BroadcastEvent
         Dim msg = "Apakah Anda yakin untuk broadcast pesan ? Pesan akan dikirimkan berdasarkan pemetaan kategori."
         If MessageBox.Show(msg, "Konfirmasi", MessageBoxButtons.YesNo, MessageBoxIcon.Question) = DialogResult.Yes Then
-            Dim daSelectAllRelations As OleDbDataAdapter
-            daSelectAllRelations = New OleDbDataAdapter("SELECT * FROM customer_category", frmDbKontakClass.Conn)
-            Dim dsAllRelations As DataSet
-            dsAllRelations = New DataSet
-            dsAllRelations.Clear()
-            daSelectAllRelations.Fill(dsAllRelations, "relation")
+            'Get All Customer
+            Dim daSelectAllCustomer As OleDbDataAdapter
+            daSelectAllCustomer = New OleDbDataAdapter("SELECT * FROM customer", frmDbKontakClass.Conn)
+            Dim dsAllCustomer As DataSet
+            dsAllCustomer = New DataSet
+            dsAllCustomer.Clear()
+            daSelectAllCustomer.Fill(dsAllCustomer, "customer")
+
+            'Untuk tiap customer, cek ke tabel relasi
             Dim i As Integer
-            For i = 0 To (dsAllRelations.Tables("relation").Rows.Count - 1)
-                'Get data customer
-                Dim customerId = dsAllRelations.Tables("relation").Rows(i).Item(1).ToString()
-                Dim daSelectOneCustomer As OleDbDataAdapter = New OleDbDataAdapter("SELECT * FROM customer WHERE customer_id = " & customerId & "", frmDbKontakClass.Conn)
-                Dim dsOneCustomer As DataSet
-                dsOneCustomer = New DataSet
-                dsOneCustomer.Clear()
-                daSelectOneCustomer.Fill(dsOneCustomer, "one_customer")
+            For i = 0 To dsAllCustomer.Tables("customer").Rows.Count - 1
+                Dim customerId = dsAllCustomer.Tables("customer").Rows(i).Item(0).ToString()
 
-                'Get data category
-                Dim categoryId = dsAllRelations.Tables("relation").Rows(i).Item(2).ToString()
-                Dim daSelectOneCategory As OleDbDataAdapter = New OleDbDataAdapter("SELECT * FROM category WHERE category_id = " & categoryId & "", frmDbKontakClass.Conn)
-                Dim dsOneCategory As DataSet
-                dsOneCategory = New DataSet
-                dsOneCategory.Clear()
-                daSelectOneCategory.Fill(dsOneCategory, "one_category")
+                'Cek di tabel relasi
+                Dim daSelectOneRelation As OleDbDataAdapter
+                daSelectOneRelation = New OleDbDataAdapter("SELECT * FROM customer_category WHERE customer_id = " & customerId & " ORDER BY category_id", frmDbKontakClass.Conn)
+                Dim dsOneRelation As DataSet
+                dsOneRelation = New DataSet
+                dsOneRelation.Clear()
+                daSelectOneRelation.Fill(dsOneRelation, "relation")
 
-                If (dsOneCustomer.Tables("one_customer").Rows.Count = 1 And dsOneCategory.Tables("one_category").Rows.Count = 1) Then
+                If dsOneRelation.Tables("relation").Rows.Count <> 0 Then
+                    'Loop di dataset one relation
+                    Dim j As Integer
+                    Dim listCategory As New List(Of String)
+                    For j = 0 To dsOneRelation.Tables("relation").Rows.Count - 1
+                        'Get data category
+                        Dim categoryId = dsOneRelation.Tables("relation").Rows(j).Item(2).ToString()
+                        Dim daSelectOneCategory As OleDbDataAdapter
+                        daSelectOneCategory = New OleDbDataAdapter("SELECT category_name FROM category WHERE category_id = " & categoryId & "", frmDbKontakClass.Conn)
+                        Dim dsOneCategory As DataSet
+                        dsOneCategory = New DataSet
+                        dsOneCategory.Clear()
+                        daSelectOneCategory.Fill(dsOneCategory, "one_category")
+                        Dim categoryWithStrip = "*- " + dsOneCategory.Tables("one_category").Rows(0).Item(0).ToString() + "*"
+                        Dim categoryName As String = categoryWithStrip & vbCrLf
+                        listCategory.Add(categoryName)
+                    Next
+
                     'Create Message
                     Dim broadcastMessage As String
                     Dim receiverNumber As String
-                    Dim categoryName As String
                     Dim messageArguments As MsgArgs
-                    receiverNumber = dsOneCustomer.Tables("one_customer").Rows(0).Item(1).ToString()
-                    MessageBox.Show(receiverNumber)
-                    categoryName = dsOneCategory.Tables("one_category").Rows(0).Item(2).ToString()
-                    broadcastMessage = "Yth. Bapak/Ibu di tempat, berikut kami kirimkan salah satu kategori buku, yaitu " + categoryName + ". Terimakasih atas perhatian Bapak/Ibu."
+                    receiverNumber = dsAllCustomer.Tables("customer").Rows(i).Item(1).ToString()
+                    Dim listCategoryString As String = String.Join("", listCategory)
+                    broadcastMessage = String.Format("Yth. Bapak/Ibu Customer *{0}*, berikut kami kirimkan list kategori buku sebagai berikut : {1}{2}", receiverNumber, vbCrLf, listCategoryString)
+                    Dim ucapanTerimakasih As String = vbCrLf + "Atas perhatian Bapak/Ibu, kami mengucapkan terimakasih."
+                    broadcastMessage += ucapanTerimakasih
                     messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.Text)
                     _wa.SendMessage(messageArguments)
                 End If
             Next
-            '_wa.ArchiveChat()
         End If
     End Sub
     Private Sub btnDatabase_Click(sender As Object, e As EventArgs) Handles btnDatabase.Click
-        'Using frm As New FrmDatabaseKontak("Kontak")
-        '    frm.Koneksi()
-        '    AddHandler _wa.OnReceiveContacts, AddressOf frm.AddKontakToDB ' subscribe event
-        '    _wa.GetContacts()
-
-        '    frm.ShowDialog()
-        '    RemoveHandler _wa.OnReceiveContacts, AddressOf frm.AddKontakToDB ' unsubscribe event
-        '    'frm.ShowDialog()
-        '    'AddHandler frm.SynchronizeEvent, AddressOf synchronizeDatabase ' subscribe event
-        'End Using
-        'frmDatabaseKontak.Koneksi()
-        'AddHandler _wa.OnReceiveContacts, AddressOf frmDatabaseKontak.AddKontakToDB ' subscribe event
-        '_wa.GetContacts()
-
-        'frmDatabaseKontak.ShowDialog()
-        'RemoveHandler _wa.OnReceiveContacts, AddressOf frmDatabaseKontak.AddKontakToDB ' unsubscribe event
         frmDbKontakClass.Koneksi()
         AddHandler _wa.OnReceiveContacts, AddressOf frmDbKontakClass.AddKontakToDB ' subscribe event
         _wa.GetContacts()
@@ -613,14 +598,3 @@ Public Class FrmMain
 #End Region
 
 End Class
-'Public Class SynchronizeClass
-'    Public Event SynchronizeEvent()
-
-'    Public Sub OnSynchronizeEvent()
-'        RaiseEvent SynchronizeEvent()
-'    End Sub
-
-'    Public Sub SynchronizeEventHandler(frmMain As FrmMain)
-
-'    End Sub
-'End Class

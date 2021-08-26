@@ -29,7 +29,7 @@ Public Class FrmDatabaseKontak
         Dim dtCustomerCategory As New DataTable
         DataGridView1.ColumnCount = 3
         DataGridView1.Columns(0).Name = "Customer ID"
-        'DataGridView1.Columns(0).Visible = False
+        DataGridView1.Columns(0).Visible = False
         DataGridView1.Columns(1).Name = "Nama"
         DataGridView1.Columns(2).Name = "Handphone"
 
@@ -227,9 +227,6 @@ Public Class FrmDatabaseKontak
     Public Event SynchronizeEvent()
     Public Event BroadcastEvent()
     Private Sub btnSynchronize_Click(sender As Object, e As EventArgs) Handles btnSynchronize.Click
-        'Close()
-        'MessageBox.Show("Silahkan klik tombol 'Data' kembali")
-        'Conn.Close()
         RaiseEvent SynchronizeEvent()
     End Sub
 
