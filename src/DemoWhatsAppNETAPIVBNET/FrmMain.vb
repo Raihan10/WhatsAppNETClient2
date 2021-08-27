@@ -36,7 +36,7 @@ Public Class FrmMain
     End Sub
 
     Private Sub btnStart_Click(sender As Object, e As EventArgs) Handles btnStart.Click
-        'txtLokasiWhatsAppNETAPINodeJs.Text = "D:\Documents\Kuliah\PKL\Percobaan\wanetlibraryfork\WhatsAppNETAPINodeJs"
+        txtLokasiWhatsAppNETAPINodeJs.Text = "D:\Documents\Kuliah\PKL\Percobaan\wanetlibraryfork\WhatsAppNETAPINodeJs"
         If (String.IsNullOrEmpty(txtLokasiWhatsAppNETAPINodeJs.Text)) Then
             MessageBox.Show("Maaf, lokasi folder 'WhatsApp NET API NodeJs'  belum di set", "Peringatan",
                 MessageBoxButtons.OK, MessageBoxIcon.Information)
@@ -581,7 +581,9 @@ Public Class FrmMain
                     broadcastMessage = String.Format("Yth. Bapak/Ibu Customer *{0}*, berikut kami kirimkan list kategori buku sebagai berikut : {1}{2}", receiverNumber, vbCrLf, listCategoryString)
                     Dim ucapanTerimakasih As String = vbCrLf + "Atas perhatian Bapak/Ibu, kami mengucapkan terimakasih."
                     broadcastMessage += ucapanTerimakasih
-                    messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.Text)
+                    'Test untuk kirim image
+                    Dim imageBook As String = "D:\Documents\Kuliah\PKL\book_cover.jpg"
+                    messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.Image, imageBook)
                     _wa.SendMessage(messageArguments)
                 End If
             Next

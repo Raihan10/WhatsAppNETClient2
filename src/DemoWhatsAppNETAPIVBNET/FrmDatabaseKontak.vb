@@ -29,7 +29,7 @@ Public Class FrmDatabaseKontak
         Dim dtCustomerCategory As New DataTable
         DataGridView1.ColumnCount = 3
         DataGridView1.Columns(0).Name = "Customer ID"
-        DataGridView1.Columns(0).Visible = False
+        'DataGridView1.Columns(0).Visible = False
         DataGridView1.Columns(1).Name = "Nama"
         DataGridView1.Columns(2).Name = "Handphone"
 
@@ -206,7 +206,7 @@ Public Class FrmDatabaseKontak
             Try
                 cmd.ExecuteNonQuery()
                 cmd.Dispose()
-                'DataGridView1.Rows(e.RowIndex).Cells(e.ColumnIndex).Value = True
+                DataGridView1.Rows(e.RowIndex).Cells(e.ColumnIndex).Value = True
             Catch ex As Exception
                 MsgBox(ex.Message)
             End Try
@@ -217,7 +217,7 @@ Public Class FrmDatabaseKontak
             Try
                 cmd.ExecuteNonQuery()
                 cmd.Dispose()
-                'DataGridView1.Rows(e.RowIndex).Cells(e.ColumnIndex).Value = False
+                DataGridView1.Rows(e.RowIndex).Cells(e.ColumnIndex).Value = False
             Catch ex As Exception
                 MsgBox(ex.Message)
             End Try
