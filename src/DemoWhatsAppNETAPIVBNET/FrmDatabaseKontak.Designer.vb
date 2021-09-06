@@ -31,27 +31,28 @@ Partial Class FrmDatabaseKontak
         'DataGridView1
         '
         Me.DataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
-        Me.DataGridView1.Location = New System.Drawing.Point(12, 45)
+        Me.DataGridView1.Location = New System.Drawing.Point(12, 12)
         Me.DataGridView1.Name = "DataGridView1"
+        Me.DataGridView1.RowHeadersVisible = False
         Me.DataGridView1.RowHeadersWidth = 62
         Me.DataGridView1.RowTemplate.Height = 28
-        Me.DataGridView1.Size = New System.Drawing.Size(1785, 796)
+        Me.DataGridView1.Size = New System.Drawing.Size(1852, 693)
         Me.DataGridView1.TabIndex = 0
         '
         'btnSynchronize
         '
-        Me.btnSynchronize.Location = New System.Drawing.Point(1107, 893)
+        Me.btnSynchronize.Location = New System.Drawing.Point(1303, 724)
         Me.btnSynchronize.Name = "btnSynchronize"
-        Me.btnSynchronize.Size = New System.Drawing.Size(240, 93)
+        Me.btnSynchronize.Size = New System.Drawing.Size(179, 62)
         Me.btnSynchronize.TabIndex = 1
         Me.btnSynchronize.Text = "Synchronize"
         Me.btnSynchronize.UseVisualStyleBackColor = True
         '
         'btnSend
         '
-        Me.btnSend.Location = New System.Drawing.Point(1488, 893)
+        Me.btnSend.Location = New System.Drawing.Point(1521, 724)
         Me.btnSend.Name = "btnSend"
-        Me.btnSend.Size = New System.Drawing.Size(240, 93)
+        Me.btnSend.Size = New System.Drawing.Size(179, 62)
         Me.btnSend.TabIndex = 2
         Me.btnSend.Text = "Send"
         Me.btnSend.UseVisualStyleBackColor = True
@@ -60,12 +61,13 @@ Partial Class FrmDatabaseKontak
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(9.0!, 20.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(1809, 1015)
+        Me.AutoSize = True
+        Me.ClientSize = New System.Drawing.Size(1871, 802)
         Me.Controls.Add(Me.btnSend)
         Me.Controls.Add(Me.btnSynchronize)
         Me.Controls.Add(Me.DataGridView1)
         Me.Name = "FrmDatabaseKontak"
-        Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
+        Me.StartPosition = System.Windows.Forms.FormStartPosition.Manual
         Me.Text = "FrmDatabaseKontak"
         CType(Me.DataGridView1, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)

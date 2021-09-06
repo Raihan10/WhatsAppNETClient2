@@ -28,9 +28,11 @@ Public Class FrmDatabaseKontak
         'Data Table
         Dim dtCustomerCategory As New DataTable
         DataGridView1.ColumnCount = 3
-        DataGridView1.Columns(0).Name = "Customer ID"
+        DataGridView1.Columns(0).Name = "ID"
+        DataGridView1.Columns(0).Width = 60
         'DataGridView1.Columns(0).Visible = False
         DataGridView1.Columns(1).Name = "Nama"
+        DataGridView1.Columns(1).Width = 160
         DataGridView1.Columns(2).Name = "Handphone"
 
         Dim daSelectAllCustomer As OleDbDataAdapter
@@ -115,6 +117,12 @@ Public Class FrmDatabaseKontak
                 '    End If
                 'Next
             Next
+        Next
+
+        'Column Header Align Center
+        Dim k As Integer
+        For k = 0 To DataGridView1.ColumnCount - 1
+            DataGridView1.Columns(k).HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter
         Next
     End Sub
     Sub DeleteAllData()
