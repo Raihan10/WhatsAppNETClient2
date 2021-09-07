@@ -2,11 +2,8 @@
 Imports WhatsAppNETAPI
 Public Class FrmDatabaseKontak
     Public Conn As OleDbConnection
-    Dim da As OleDbDataAdapter
-    Dim ds As DataSet
     Dim LokasiDB As String
 
-    Private iWhatsApp As IWhatsAppNETAPI
     Public Sub New(ByVal title As String)
 
         ' This call is required by the designer.
@@ -15,8 +12,6 @@ Public Class FrmDatabaseKontak
         ' Add any initialization after the InitializeComponent() call.
         Me.Text = title
 
-        ' Cretae object
-        iWhatsApp = New WhatsAppNETAPI.WhatsAppNETAPI()
     End Sub
     Sub Koneksi()
         LokasiDB = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=kontakDB.accdb"
@@ -91,7 +86,6 @@ Public Class FrmDatabaseKontak
 
                 'Loop in dataset customer_category
                 'Isi DataSet untuk tabel relasi
-                'Koneksi()
                 Dim daSelectOneRelation As OleDbDataAdapter
                 daSelectOneRelation = New OleDbDataAdapter("SELECT * FROM customer_category WHERE [customer_id]=" & customer_id & " AND [category_id]=" & category_id & "", Conn)
 
@@ -106,16 +100,6 @@ Public Class FrmDatabaseKontak
                 Else
                     DataGridView1.Rows(rowIndex).Cells(columnIndex).Value = True
                 End If
-                'Dim countRelationRows As Integer = dsAllRelation.Tables("customer_category").Rows.Count - 1
-                'MessageBox.Show(countRelationRows)
-                'Dim k As Integer
-                'For k = 0 To countRelationRows
-                '    If (dsAllRelation.Tables("customer_category").Rows(k).Item(1).ToString = customer_id And dsAllRelation.Tables("customer_category").Rows(k).Item(2).ToString = category_id) Then
-                '        DataGridView1.Rows(rowIndex).Cells(columnIndex).Value = True
-                '    Else
-                '        DataGridView1.Rows(rowIndex).Cells(columnIndex).Value = False
-                '    End If
-                'Next
             Next
         Next
 
@@ -173,15 +157,6 @@ Public Class FrmDatabaseKontak
                         MsgBox(ex.Message)
                     End Try
                 Else
-                    'If (contact.id.Equals("6287747965139")) Then
-                    '    MessageBox.Show(dsSelectOne.Tables("customer").Rows.Count)
-                    '    MessageBox.Show(contact.id)
-                    '    MessageBox.Show(contact.name)
-                    'End If
-
-                    'MessageBox.Show(dsSelectOne.Tables("customer").Rows.Count)
-                    'MessageBox.Show(contact.id)
-                    'MessageBox.Show(contact.name)
                     Dim queryUpdateString As String
                     queryUpdateString = "UPDATE customer SET [customer_name] = '" & contact.name & "' WHERE [handphone] = '" & contact.id & "'"
                     Dim cmd As OleDbCommand = New OleDbCommand(queryUpdateString, Conn)
@@ -196,7 +171,6 @@ Public Class FrmDatabaseKontak
             Else
             End If
         Next
-        'Conn.Close()
     End Sub
     Private Sub DataGridView1_CellClick(sender As Object, e As DataGridViewCellEventArgs) Handles DataGridView1.CellClick
         Dim customerIdString As String = DataGridView1.Rows(e.RowIndex).Cells(0).Value.ToString
@@ -230,23 +204,9 @@ Public Class FrmDatabaseKontak
                 MsgBox(ex.Message)
             End Try
         End If
-        'Conn.Close()
     End Sub
     Public Event SynchronizeEvent()
-    Public Event BroadcastEvent()
     Private Sub btnSynchronize_Click(sender As Object, e As EventArgs) Handles btnSynchronize.Click
         RaiseEvent SynchronizeEvent()
-    End Sub
-
-    Private Sub btnSend_Click(sender As Object, e As EventArgs) Handles btnSend.Click
-        RaiseEvent BroadcastEvent()
-    End Sub
-    Public Sub getAllRelations()
-        Dim daSelectAllRelations As OleDbDataAdapter
-        daSelectAllRelations = New OleDbDataAdapter("SELECT * FROM customer_category", Conn)
-        Dim dsAllRelations As DataSet
-        dsAllRelations = New DataSet
-        dsAllRelations.Clear()
-        daSelectAllRelations.Fill(dsAllRelations, "category")
     End Sub
 End Class

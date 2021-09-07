@@ -32,11 +32,10 @@ Public Class FrmMain
         InitializeComponent()
 
         _wa = New WhatsAppNETAPI.WhatsAppNETAPI()
-        'frmDbKontakClass = New FrmDatabaseKontak("DBKontak")
     End Sub
 
     Private Sub btnStart_Click(sender As Object, e As EventArgs) Handles btnStart.Click
-        txtLokasiWhatsAppNETAPINodeJs.Text = "D:\Documents\Kuliah\PKL\Percobaan\wanetlibraryfork\WhatsAppNETAPINodeJs"
+        'txtLokasiWhatsAppNETAPINodeJs.Text = "D:\Documents\Kuliah\PKL\Percobaan\wanetlibraryfork\WhatsAppNETAPINodeJs"
         If (String.IsNullOrEmpty(txtLokasiWhatsAppNETAPINodeJs.Text)) Then
             MessageBox.Show("Maaf, lokasi folder 'WhatsApp NET API NodeJs'  belum di set", "Peringatan",
                 MessageBoxButtons.OK, MessageBoxIcon.Information)
@@ -62,6 +61,28 @@ Public Class FrmMain
         End If
 
         Connect()
+
+        frmDbKontakClass.Koneksi()
+        'Isi checklistbox category
+        Dim daSelectCategory As OleDbDataAdapter
+
+
+        'Isi dataset untuk tabel relasi
+        daSelectCategory = New OleDbDataAdapter("SELECT * FROM category", frmDbKontakClass.Conn)
+
+        'Isi dataset untuk category
+        Dim dsCategory As DataSet
+        dsCategory = New DataSet
+        dsCategory.Clear()
+        daSelectCategory.Fill(dsCategory, "category")
+
+        'Isi checklistbox
+        CheckedListBox1.Items.Clear()
+        Dim index As Integer
+        For index = 0 To dsCategory.Tables("category").Rows.Count - 1
+            Dim categoryName = dsCategory.Tables("category").Rows(index).Item(2).ToString
+            CheckedListBox1.Items.Add(categoryName, CheckState.Unchecked)
+        Next
     End Sub
 
     Private Sub btnStop_Click(sender As Object, e As EventArgs) Handles btnStop.Click
@@ -76,7 +97,6 @@ Public Class FrmMain
         ' subscribe event
         AddHandler _wa.OnStartup, AddressOf OnStartupHandler
         AddHandler _wa.OnChangeState, AddressOf OnChangeStateHandler
-        AddHandler _wa.OnReceiveMessages, AddressOf OnReceiveMessagesHandler
         AddHandler _wa.OnClientConnected, AddressOf OnClientConnectedHandler
 
         _wa.Connect()
@@ -105,36 +125,17 @@ Public Class FrmMain
 
         btnStart.Enabled = True
         btnStop.Enabled = False
-        btnGrabContacts.Enabled = False
-        btnGrabGroupAndMembers.Enabled = False
-        btnUnreadMessages.Enabled = False
-        btnArchiveChat.Enabled = False
-        btnDeleteChat.Enabled = False
         btnKirim.Enabled = False
         btnDatabase.Enabled = False
 
         txtFileDokumen.Clear()
         txtFileGambar.Clear()
 
-        chkSubscribe.Checked = False
-        chkSubscribe.Enabled = False
-
-        chkMessageSentSubscribe.Checked = False
-        chkMessageSentSubscribe.Enabled = False
-
-        chkAutoReplay.Checked = False
-        chkAutoReplay.Enabled = False
-
-        lstPesanMasuk.Items.Clear()
-
         Using New StCursor(Cursors.WaitCursor, New TimeSpan(0, 0, 0, 0))
             ' unsubscribe event
             RemoveHandler _wa.OnStartup, AddressOf OnStartupHandler
             RemoveHandler _wa.OnChangeState, AddressOf OnChangeStateHandler
             RemoveHandler _wa.OnScanMe, AddressOf OnScanMeHandler
-            RemoveHandler _wa.OnReceiveMessage, AddressOf OnReceiveMessageHandler
-            RemoveHandler _wa.OnReceiveMessages, AddressOf OnReceiveMessagesHandler
-            RemoveHandler _wa.OnReceiveMessageStatus, AddressOf OnReceiveMessageStatusHandler
             RemoveHandler _wa.OnClientConnected, AddressOf OnClientConnectedHandler
 
             _wa.Disconnect()
@@ -144,56 +145,89 @@ Public Class FrmMain
 
     Private Sub btnKirim_Click(sender As Object, e As EventArgs) Handles btnKirim.Click
 
-        Dim msgArgs As MsgArgs
-        Dim jumlahPesan = Int32.Parse(txtJumlahPesan.Text)
+        Dim msg = "Apakah Anda yakin untuk broadcast pesan ? Pesan akan dikirimkan berdasarkan pemetaan kategori."
+        If MessageBox.Show(msg, "Konfirmasi", MessageBoxButtons.YesNo, MessageBoxIcon.Question) = DialogResult.Yes Then
+            'Get All Customer
+            Dim daSelectAllCustomer As OleDbDataAdapter
+            daSelectAllCustomer = New OleDbDataAdapter("SELECT * FROM customer", frmDbKontakClass.Conn)
+            Dim dsAllCustomer As DataSet
+            dsAllCustomer = New DataSet
+            dsAllCustomer.Clear()
+            daSelectAllCustomer.Fill(dsAllCustomer, "customer")
 
-        If (jumlahPesan > 1) Then ' broadcast
+            'Untuk tiap customer, cek ke tabel relasi
+            Dim i As Integer
+            For i = 0 To dsAllCustomer.Tables("customer").Rows.Count - 1
+                Dim customerId = dsAllCustomer.Tables("customer").Rows(i).Item(0).ToString()
 
-            Dim list As New List(Of MsgArgs)
-            Dim index As Integer
+                'Cek di tabel relasi
+                Dim daSelectOneRelation As OleDbDataAdapter
+                daSelectOneRelation = New OleDbDataAdapter("SELECT * FROM customer_category WHERE customer_id = " & customerId & " ORDER BY category_id", frmDbKontakClass.Conn)
+                Dim dsOneRelation As DataSet
+                dsOneRelation = New DataSet
+                dsOneRelation.Clear()
+                daSelectOneRelation.Fill(dsOneRelation, "relation")
 
-            For index = 1 To jumlahPesan
+                If dsOneRelation.Tables("relation").Rows.Count <> 0 Then
+                    'Cek apakah customer cocok dengan pilihan category
+                    Dim isBroadcastReceiver As Boolean
+                    isBroadcastReceiver = False
 
-                If chkKirimPesanDgGambar.Checked Then
-                    msgArgs = New MsgArgs(txtKontak.Text, txtPesan.Text, MsgArgsType.Image, txtFileGambar.Text)
-                ElseIf chkKirimGambarDariUrl.Checked Then
-                    msgArgs = New MsgArgs(txtKontak.Text, txtPesan.Text, MsgArgsType.Url, txtUrl.Text)
-                ElseIf chkKirimFileAja.Checked Then
-                    msgArgs = New MsgArgs(txtKontak.Text, txtPesan.Text, MsgArgsType.File, txtFileDokumen.Text)
-                Else
-                    msgArgs = New MsgArgs(txtKontak.Text, txtPesan.Text, MsgArgsType.Text)
+                    'Loop di dataset one relation
+                    Dim j As Integer
+                    Dim listCategory As New List(Of String)
+                    For j = 0 To dsOneRelation.Tables("relation").Rows.Count - 1
+                        'Get data category
+                        Dim categoryId = dsOneRelation.Tables("relation").Rows(j).Item(2).ToString()
+                        Dim daSelectOneCategory As OleDbDataAdapter
+                        daSelectOneCategory = New OleDbDataAdapter("SELECT category_name FROM category WHERE category_id = " & categoryId & "", frmDbKontakClass.Conn)
+                        Dim dsOneCategory As DataSet
+                        dsOneCategory = New DataSet
+                        dsOneCategory.Clear()
+                        daSelectOneCategory.Fill(dsOneCategory, "one_category")
+
+                        'Loop di checkboxlist pilihan category
+                        Dim index As Integer
+                        For index = 0 To CheckedListBox1.Items.Count - 1
+                            If (CheckedListBox1.GetItemCheckState(index) = 1) Then
+                                If (CheckedListBox1.Items(index).ToString.Equals(dsOneCategory.Tables("one_category").Rows(0).Item(0).ToString())) Then
+                                    isBroadcastReceiver = True
+                                    Exit For
+                                End If
+                            End If
+                        Next
+
+                        If (isBroadcastReceiver) Then
+                            Exit For
+                        End If
+                    Next
+
+                    If (isBroadcastReceiver) Then
+                        'Create Message
+                        Dim broadcastMessage As String
+                        Dim receiverNumber As String
+                        Dim messageArguments As MsgArgs
+                        receiverNumber = dsAllCustomer.Tables("customer").Rows(i).Item(1).ToString()
+                        broadcastMessage = String.Format("Yth. Bapak/Ibu Customer *{0}*,{1}{1}{2}", receiverNumber, vbCrLf, txtPesan.Text)
+
+                        'Cek tipe message
+                        If chkKirimPesanDgGambar.Checked Then
+                            messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.Image, txtFileGambar.Text)
+                        ElseIf chkKirimGambarDariUrl.Checked Then
+                            messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.Url, txtUrl.Text)
+                        ElseIf chkKirimFileAja.Checked Then
+                            messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.File, txtFileDokumen.Text)
+                            _wa.SendMessage(messageArguments)
+                            messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.Text)
+                        Else
+                            messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.Text)
+                        End If
+
+                        _wa.SendMessage(messageArguments)
+                    End If
                 End If
-
-                list.Add(msgArgs)
-
             Next
-
-            _wa.BroadcastMessage(list)
-        Else
-
-            If chkKirimPesanDgGambar.Checked Then
-                msgArgs = New MsgArgs(txtKontak.Text, txtPesan.Text, MsgArgsType.Image, txtFileGambar.Text)
-            ElseIf chkKirimGambarDariUrl.Checked Then
-                msgArgs = New MsgArgs(txtKontak.Text, txtPesan.Text, MsgArgsType.Url, txtUrl.Text)
-            ElseIf chkKirimFileAja.Checked Then
-                msgArgs = New MsgArgs(txtKontak.Text, txtPesan.Text, MsgArgsType.File, txtFileDokumen.Text)
-            Else
-                msgArgs = New MsgArgs(txtKontak.Text, txtPesan.Text, MsgArgsType.Text)
-            End If
-
-            _wa.SendMessage(msgArgs)
         End If
-    End Sub
-
-    Private Sub chkSubscribe_CheckedChanged(sender As Object, e As EventArgs) Handles chkSubscribe.CheckedChanged
-        If (chkSubscribe.Checked) Then
-            AddHandler _wa.OnReceiveMessage, AddressOf OnReceiveMessageHandler ' subscribe event
-        Else
-            RemoveHandler _wa.OnReceiveMessage, AddressOf OnReceiveMessageHandler ' unsubscribe event
-            lstPesanMasuk.Items.Clear()
-        End If
-
-        chkAutoReplay.Enabled = chkSubscribe.Checked
     End Sub
 
     Private Sub btnCariGambar_Click(sender As Object, e As EventArgs) Handles btnCariGambar.Click
@@ -283,49 +317,6 @@ Public Class FrmMain
 
     End Sub
 
-    Private Sub btnGrabContacts_Click(sender As Object, e As EventArgs) Handles btnGrabContacts.Click
-        Using frm As New FrmContactOrGroup("Contacts")
-
-            AddHandler _wa.OnReceiveContacts, AddressOf frm.OnReceiveContactsHandler ' subscribe event
-            _wa.GetContacts()
-
-            frm.ShowDialog()
-            RemoveHandler _wa.OnReceiveContacts, AddressOf frm.OnReceiveContactsHandler ' unsubscribe event
-
-        End Using
-    End Sub
-
-    Private Sub chkMessageSentSubscribe_CheckedChanged(sender As Object, e As EventArgs) Handles chkMessageSentSubscribe.CheckedChanged
-
-        If chkMessageSentSubscribe.Checked Then
-            AddHandler _wa.OnReceiveMessageStatus, AddressOf OnReceiveMessageStatusHandler ' subscribe event
-        Else
-            RemoveHandler _wa.OnReceiveMessageStatus, AddressOf OnReceiveMessageStatusHandler ' unsubscribe event
-
-            lstPesanKeluar.Items.Clear()
-        End If
-    End Sub
-
-    Private Sub btnDeleteChat_Click(sender As Object, e As EventArgs) Handles btnDeleteChat.Click
-        Dim msg = "Fungsi ini akan MENGHAPUS semua pesan." + Environment.NewLine +
-                  "Apakah ingin dilanjutkan"
-        If MessageBox.Show(msg, "Konfirmasi", MessageBoxButtons.YesNo, MessageBoxIcon.Question) = DialogResult.Yes Then
-            _wa.DeleteChat()
-        End If
-    End Sub
-
-    Private Sub btnArchiveChat_Click(sender As Object, e As EventArgs) Handles btnArchiveChat.Click
-        Dim msg = "Fungsi ini akan MENGARSIPKAN semua pesan." + Environment.NewLine +
-                  "Apakah ingin dilanjutkan"
-        If MessageBox.Show(msg, "Konfirmasi", MessageBoxButtons.YesNo, MessageBoxIcon.Question) = DialogResult.Yes Then
-            _wa.ArchiveChat()
-        End If
-    End Sub
-
-    Private Sub btnUnreadMessages_Click(sender As Object, e As EventArgs) Handles btnUnreadMessages.Click
-        _wa.GetUnreadMessage()
-    End Sub
-
 #Region "Event handler"
 
     Private Sub OnStartupHandler(ByVal message As String)
@@ -335,15 +326,8 @@ Public Class FrmMain
 
             btnStart.Invoke(Sub() btnStart.Enabled = False)
             btnStop.Invoke(Sub() btnStop.Enabled = True)
-            btnGrabContacts.Invoke(Sub() btnGrabContacts.Enabled = True)
-            btnGrabGroupAndMembers.Invoke(Sub() btnGrabGroupAndMembers.Enabled = True)
-            btnUnreadMessages.Invoke(Sub() btnUnreadMessages.Enabled = True)
-            btnArchiveChat.Invoke(Sub() btnArchiveChat.Enabled = True)
-            btnDeleteChat.Invoke(Sub() btnDeleteChat.Enabled = True)
             btnKirim.Invoke(Sub() btnKirim.Enabled = True)
             btnDatabase.Invoke(Sub() btnDatabase.Enabled = True)
-            chkSubscribe.Invoke(Sub() chkSubscribe.Enabled = True)
-            chkMessageSentSubscribe.Invoke(Sub() chkMessageSentSubscribe.Enabled = True)
 
             Me.UseWaitCursor = False
 
@@ -356,9 +340,6 @@ Public Class FrmMain
             ' unsubscribe event
             RemoveHandler _wa.OnStartup, AddressOf OnStartupHandler
             RemoveHandler _wa.OnScanMe, AddressOf OnScanMeHandler
-            RemoveHandler _wa.OnReceiveMessage, AddressOf OnReceiveMessageHandler
-            RemoveHandler _wa.OnReceiveMessages, AddressOf OnReceiveMessagesHandler
-            RemoveHandler _wa.OnReceiveMessageStatus, AddressOf OnReceiveMessageStatusHandler
             RemoveHandler _wa.OnClientConnected, AddressOf OnClientConnectedHandler
 
             _wa.Disconnect()
@@ -378,115 +359,6 @@ Public Class FrmMain
     End Sub
 
     Private Sub OnScanMeHandler(ByVal qrcodePath As String)
-
-    End Sub
-
-    Private Sub OnReceiveMessageHandler(ByVal message As WhatsAppNETAPI.Message)
-
-        System.Diagnostics.Debug.Print(message.type)
-
-        Dim msg = message.content
-        Dim pengirim = IIf(String.IsNullOrEmpty(message.sender.name), message.from, message.sender.name)
-        Dim fileName = message.filename
-
-        Dim data = String.Empty
-
-        If String.IsNullOrEmpty(fileName) Then
-            data = String.Format("[{0}] Pengirim: {1}, Pesan teks: {2}",
-                    message.datetime.ToString("yyyy-MM-dd HH:mm:ss"), pengirim, msg)
-        Else
-            data = String.Format("[{0}] Pengirim: {1}, Pesan gambar/dokumen: {2}, nama file: {3}",
-                    message.datetime.ToString("yyyy-MM-dd HH:mm:ss"), pengirim, msg, fileName)
-        End If
-
-        ' update UI dari thread yang berbeda
-        lstPesanMasuk.Invoke(
-            Sub()
-                lstPesanMasuk.Items.Add(data)
-
-                If message.type = MessageType.Location Then
-
-                    Dim location = message.location
-
-                    Dim dataLocation = String.Format("--> latitude: {0}, longitude: {1}, description: {2}",
-                        location.latitude, location.longitude, location.description)
-
-                    lstPesanMasuk.Items.Add(dataLocation)
-
-                ElseIf message.type = MessageType.VCard OrElse message.type = MessageType.MultiVCard Then
-                    Dim vcards = message.vcards
-                    Dim vcardFilenames = message.vcardFilenames
-
-                    Dim index = 0
-                    For Each vcard As VCard In vcards
-
-                        Dim dataVCard = String.Format("--> N: {0}, FN: {1}, WA Id: {2}, fileName: {3}",
-                            vcard.n, vcard.fn, vcard.waId, vcardFilenames(index))
-
-                        lstPesanMasuk.Items.Add(dataVCard)
-
-                        index = index + 1
-                    Next
-                End If
-
-                lstPesanMasuk.SelectedIndex = lstPesanMasuk.Items.Count - 1
-            End Sub
-        )
-
-        If chkAutoReplay.Checked Then
-
-            Dim msgReplay = String.Format("Bpk/Ibu *{0}*, pesan *{1}* sudah kami terima. Silahkan ditunggu.",
-                pengirim, msg)
-
-            _wa.ReplyMessage(New ReplyMsgArgs(message.from, msgReplay, message.id))
-        End If
-    End Sub
-
-    Private Sub OnReceiveMessagesHandler(messages As IList(Of Message))
-
-        For Each message As Message In messages
-
-            Dim msg = message.content
-            Dim pengirim = IIf(String.IsNullOrEmpty(message.sender.name), message.from, message.sender.name)
-
-            Dim data = String.Format("[{0}] Pengirim: {1}, Isi pesan: {2}",
-            message.datetime.ToString("yyyy-MM-dd HH:mm:ss"), pengirim, msg)
-
-            ' update UI dari thread yang berbeda
-            lstPesanMasuk.Invoke(
-                Sub()
-                    lstPesanMasuk.Items.Add(data)
-                    lstPesanMasuk.SelectedIndex = lstPesanMasuk.Items.Count - 1
-                End Sub
-            )
-
-            If chkAutoReplay.Checked Then
-
-                Dim senderName = IIf(String.IsNullOrEmpty(message.sender.name), message.from, message.sender.name)
-
-                Dim msgReplay = String.Format("Bpk/Ibu *{0}*, pesan *{1}* sudah kami terima. Silahkan ditunggu.",
-                    senderName, msg)
-
-                _wa.ReplyMessage(New ReplyMsgArgs(message.from, msgReplay, message.id))
-            End If
-        Next
-
-    End Sub
-
-    Private Sub OnReceiveMessageStatusHandler(ByVal msgStatus As WhatsAppNETAPI.MessageStatus)
-
-        Dim status = IIf(msgStatus.status = "true", "BERHASIL", "GAGAL")
-
-        Dim msg = String.Format("Status pengiriman pesan ke {0}, {1}",
-            msgStatus.send_to, status)
-
-        ' update UI dari thread yang berbeda
-        lstPesanMasuk.Invoke(
-            Sub()
-                lstPesanKeluar.Items.Add(msg)
-                lstPesanKeluar.SelectedIndex = lstPesanKeluar.Items.Count - 1
-            End Sub
-        )
 
     End Sub
 
@@ -510,7 +382,7 @@ Public Class FrmMain
         Disconnect()
     End Sub
 
-    Private Sub btnGrabGroupAndMembers_Click(sender As Object, e As EventArgs) Handles btnGrabGroupAndMembers.Click
+    Private Sub btnGrabGroupAndMembers_Click(sender As Object, e As EventArgs)
         Using frm As New FrmContactOrGroup("Groups and Members")
 
             AddHandler _wa.OnReceiveGroups, AddressOf frm.OnReceiveGroupsHandler ' subscribe event
@@ -530,67 +402,7 @@ Public Class FrmMain
         frmDbKontakClass.LoadDataKontak()
         RemoveHandler _wa.OnReceiveContacts, AddressOf frmDbKontakClass.AddKontakToDB ' unsubscribe event
     End Sub
-    Public Sub broadcastMessage() Handles frmDbKontakClass.BroadcastEvent
-        Dim msg = "Apakah Anda yakin untuk broadcast pesan ? Pesan akan dikirimkan berdasarkan pemetaan kategori."
-        If MessageBox.Show(msg, "Konfirmasi", MessageBoxButtons.YesNo, MessageBoxIcon.Question) = DialogResult.Yes Then
-            'Get All Customer
-            Dim daSelectAllCustomer As OleDbDataAdapter
-            daSelectAllCustomer = New OleDbDataAdapter("SELECT * FROM customer", frmDbKontakClass.Conn)
-            Dim dsAllCustomer As DataSet
-            dsAllCustomer = New DataSet
-            dsAllCustomer.Clear()
-            daSelectAllCustomer.Fill(dsAllCustomer, "customer")
-
-            'Untuk tiap customer, cek ke tabel relasi
-            Dim i As Integer
-            For i = 0 To dsAllCustomer.Tables("customer").Rows.Count - 1
-                Dim customerId = dsAllCustomer.Tables("customer").Rows(i).Item(0).ToString()
-
-                'Cek di tabel relasi
-                Dim daSelectOneRelation As OleDbDataAdapter
-                daSelectOneRelation = New OleDbDataAdapter("SELECT * FROM customer_category WHERE customer_id = " & customerId & " ORDER BY category_id", frmDbKontakClass.Conn)
-                Dim dsOneRelation As DataSet
-                dsOneRelation = New DataSet
-                dsOneRelation.Clear()
-                daSelectOneRelation.Fill(dsOneRelation, "relation")
-
-                If dsOneRelation.Tables("relation").Rows.Count <> 0 Then
-                    'Loop di dataset one relation
-                    Dim j As Integer
-                    Dim listCategory As New List(Of String)
-                    For j = 0 To dsOneRelation.Tables("relation").Rows.Count - 1
-                        'Get data category
-                        Dim categoryId = dsOneRelation.Tables("relation").Rows(j).Item(2).ToString()
-                        Dim daSelectOneCategory As OleDbDataAdapter
-                        daSelectOneCategory = New OleDbDataAdapter("SELECT category_name FROM category WHERE category_id = " & categoryId & "", frmDbKontakClass.Conn)
-                        Dim dsOneCategory As DataSet
-                        dsOneCategory = New DataSet
-                        dsOneCategory.Clear()
-                        daSelectOneCategory.Fill(dsOneCategory, "one_category")
-                        Dim categoryWithStrip = "*- " + dsOneCategory.Tables("one_category").Rows(0).Item(0).ToString() + "*"
-                        Dim categoryName As String = categoryWithStrip & vbCrLf
-                        listCategory.Add(categoryName)
-                    Next
-
-                    'Create Message
-                    Dim broadcastMessage As String
-                    Dim receiverNumber As String
-                    Dim messageArguments As MsgArgs
-                    receiverNumber = dsAllCustomer.Tables("customer").Rows(i).Item(1).ToString()
-                    Dim listCategoryString As String = String.Join("", listCategory)
-                    broadcastMessage = String.Format("Yth. Bapak/Ibu Customer *{0}*, berikut kami kirimkan list kategori buku sebagai berikut : {1}{2}", receiverNumber, vbCrLf, listCategoryString)
-                    Dim ucapanTerimakasih As String = vbCrLf + "Atas perhatian Bapak/Ibu, kami mengucapkan terimakasih."
-                    broadcastMessage += ucapanTerimakasih
-                    'Test untuk kirim image
-                    Dim imageBook As String = "D:\Documents\Kuliah\PKL\book_cover.jpg"
-                    messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.Image, imageBook)
-                    _wa.SendMessage(messageArguments)
-                End If
-            Next
-        End If
-    End Sub
     Private Sub btnDatabase_Click(sender As Object, e As EventArgs) Handles btnDatabase.Click
-        frmDbKontakClass.Koneksi()
         AddHandler _wa.OnReceiveContacts, AddressOf frmDbKontakClass.AddKontakToDB ' subscribe event
         _wa.GetContacts()
 
