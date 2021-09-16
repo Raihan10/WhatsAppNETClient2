@@ -35,7 +35,7 @@ Public Class FrmMain
     End Sub
 
     Private Sub btnStart_Click(sender As Object, e As EventArgs) Handles btnStart.Click
-        'txtLokasiWhatsAppNETAPINodeJs.Text = "D:\Documents\Kuliah\PKL\Percobaan\wanetlibraryfork\WhatsAppNETAPINodeJs"
+        txtLokasiWhatsAppNETAPINodeJs.Text = "D:\Documents\Kuliah\PKL\Percobaan\wanetlibraryfork\WhatsAppNETAPINodeJs"
         If (String.IsNullOrEmpty(txtLokasiWhatsAppNETAPINodeJs.Text)) Then
             MessageBox.Show("Maaf, lokasi folder 'WhatsApp NET API NodeJs'  belum di set", "Peringatan",
                 MessageBoxButtons.OK, MessageBoxIcon.Information)
@@ -147,85 +147,56 @@ Public Class FrmMain
 
         Dim msg = "Apakah Anda yakin untuk broadcast pesan ? Pesan akan dikirimkan berdasarkan pemetaan kategori."
         If MessageBox.Show(msg, "Konfirmasi", MessageBoxButtons.YesNo, MessageBoxIcon.Question) = DialogResult.Yes Then
-            'Get All Customer
-            Dim daSelectAllCustomer As OleDbDataAdapter
-            daSelectAllCustomer = New OleDbDataAdapter("SELECT * FROM customer", frmDbKontakClass.Conn)
-            Dim dsAllCustomer As DataSet
-            dsAllCustomer = New DataSet
-            dsAllCustomer.Clear()
-            daSelectAllCustomer.Fill(dsAllCustomer, "customer")
 
-            'Untuk tiap customer, cek ke tabel relasi
-            Dim i As Integer
-            For i = 0 To dsAllCustomer.Tables("customer").Rows.Count - 1
-                Dim customerId = dsAllCustomer.Tables("customer").Rows(i).Item(0).ToString()
-
-                'Cek di tabel relasi
-                Dim daSelectOneRelation As OleDbDataAdapter
-                daSelectOneRelation = New OleDbDataAdapter("SELECT * FROM customer_category WHERE customer_id = " & customerId & " ORDER BY category_id", frmDbKontakClass.Conn)
-                Dim dsOneRelation As DataSet
-                dsOneRelation = New DataSet
-                dsOneRelation.Clear()
-                daSelectOneRelation.Fill(dsOneRelation, "relation")
-
-                If dsOneRelation.Tables("relation").Rows.Count <> 0 Then
-                    'Cek apakah customer cocok dengan pilihan category
-                    Dim isBroadcastReceiver As Boolean
-                    isBroadcastReceiver = False
-
-                    'Loop di dataset one relation
-                    Dim j As Integer
-                    Dim listCategory As New List(Of String)
-                    For j = 0 To dsOneRelation.Tables("relation").Rows.Count - 1
-                        'Get data category
-                        Dim categoryId = dsOneRelation.Tables("relation").Rows(j).Item(2).ToString()
-                        Dim daSelectOneCategory As OleDbDataAdapter
-                        daSelectOneCategory = New OleDbDataAdapter("SELECT category_name FROM category WHERE category_id = " & categoryId & "", frmDbKontakClass.Conn)
-                        Dim dsOneCategory As DataSet
-                        dsOneCategory = New DataSet
-                        dsOneCategory.Clear()
-                        daSelectOneCategory.Fill(dsOneCategory, "one_category")
-
-                        'Loop di checkboxlist pilihan category
-                        Dim index As Integer
-                        For index = 0 To CheckedListBox1.Items.Count - 1
-                            If (CheckedListBox1.GetItemCheckState(index) = 1) Then
-                                If (CheckedListBox1.Items(index).ToString.Equals(dsOneCategory.Tables("one_category").Rows(0).Item(0).ToString())) Then
-                                    isBroadcastReceiver = True
-                                    Exit For
-                                End If
-                            End If
-                        Next
-
-                        If (isBroadcastReceiver) Then
-                            Exit For
-                        End If
-                    Next
-
-                    If (isBroadcastReceiver) Then
-                        'Create Message
-                        Dim broadcastMessage As String
-                        Dim receiverNumber As String
-                        Dim messageArguments As MsgArgs
-                        receiverNumber = dsAllCustomer.Tables("customer").Rows(i).Item(1).ToString()
-                        broadcastMessage = String.Format("Yth. Bapak/Ibu Customer *{0}*,{1}{1}{2}", receiverNumber, vbCrLf, txtPesan.Text)
-
-                        'Cek tipe message
-                        If chkKirimPesanDgGambar.Checked Then
-                            messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.Image, txtFileGambar.Text)
-                        ElseIf chkKirimGambarDariUrl.Checked Then
-                            messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.Url, txtUrl.Text)
-                        ElseIf chkKirimFileAja.Checked Then
-                            messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.File, txtFileDokumen.Text)
-                            _wa.SendMessage(messageArguments)
-                            messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.Text)
-                        Else
-                            messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.Text)
-                        End If
-
-                        _wa.SendMessage(messageArguments)
-                    End If
+            'Get value checkbox yang dipilih
+            Dim listCategory As New List(Of String)
+            Dim index As Integer
+            Dim listCategoryString As String = "''"
+            For index = 0 To CheckedListBox1.Items.Count - 1
+                If (CheckedListBox1.GetItemCheckState(index) = 1) Then
+                    listCategory.Add("'" + CheckedListBox1.Items(index).ToString() + "'")
+                    listCategoryString = String.Join(",", listCategory)
                 End If
+            Next
+
+            'Get Customer yang akan dikirimkan broadcast sesuai pilihan category
+            Dim daQuery As OleDbDataAdapter
+            daQuery = New OleDbDataAdapter("SELECT DISTINCT customer.handphone, customer.customer_name
+            FROM ((category
+            INNER JOIN customer_category ON customer_category.category_id =category.category_id)
+            INNER JOIN customer ON customer_category.customer_id =customer.customer_id)
+            WHERE category.category_name IN (" & listCategoryString & ");", frmDbKontakClass.Conn)
+            Dim dsQuery As DataSet
+            dsQuery = New DataSet
+            dsQuery.Clear()
+            daQuery.Fill(dsQuery, "query")
+
+            'Loop untuk tiap customer yang akan dikirimkan broadcast
+            For index = 0 To dsQuery.Tables("query").Rows.Count - 1
+
+                'Create Message
+                Dim broadcastMessage As String
+                Dim receiverNumber As String
+                Dim customerName As String
+                Dim messageArguments As MsgArgs
+                receiverNumber = dsQuery.Tables("query").Rows(index).Item(0)
+                customerName = dsQuery.Tables("query").Rows(index).Item(1)
+                broadcastMessage = String.Format("Yth. Bapak/Ibu Customer *{0}*,{1}{1}{2}", customerName, vbCrLf, txtPesan.Text)
+
+                'Cek tipe message
+                If chkKirimPesanDgGambar.Checked Then
+                    messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.Image, txtFileGambar.Text)
+                ElseIf chkKirimGambarDariUrl.Checked Then
+                    messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.Url, txtUrl.Text)
+                ElseIf chkKirimFileAja.Checked Then
+                    messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.File, txtFileDokumen.Text)
+                    _wa.SendMessage(messageArguments)
+                    messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.Text)
+                Else
+                    messageArguments = New MsgArgs(receiverNumber, broadcastMessage, MsgArgsType.Text)
+                End If
+
+                _wa.SendMessage(messageArguments)
             Next
         End If
     End Sub
